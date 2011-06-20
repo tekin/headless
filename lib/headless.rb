@@ -51,18 +51,23 @@ class Headless
   #
   # List of available options:
   # * +display+ (default 99) - what display number to listen to;
-  # * +reuse+ (default true) - if given display server already exists, should we use it or fail miserably?
+  # * +reuse+ (default false) - if given display server already exists, should we use it or fail miserably?
+  # * +search+ (default true) - if given display server already exists, should we attempt to launch a fresh one or not?
   # * +dimensions+ (default 1280x1024x24) - display dimensions and depth. Not all combinations are possible, refer to +man Xvfb+.
   def initialize(options = {})
     find_xvfb
 
     @display = options.fetch(:display, 99).to_i
-    @reuse_display = options.fetch(:reuse, true)
+    @reuse_display = options.fetch(:reuse, false)
+    @search_display = options.fetch(:search, true)
     @dimensions = options.fetch(:dimensions, '1280x1024x24')
 
     #TODO more logic here, autopicking the display number
     if @reuse_display
       launch_xvfb unless read_pid
+    elsif @search_display
+      search_display
+      launch_xvfb
     elsif read_pid
       raise Exception.new("Display :#{display} is already taken and reuse=false")
     else
@@ -94,6 +99,14 @@ class Headless
       File.delete(pidfile_name)
     end
 
+  end
+
+  def search_display(max_attempts = 100)
+    i = 1
+    while i < max_attempts && read_pid
+      @display = @display + i
+      i += 1
+    end
   end
 
   # Block syntax:
