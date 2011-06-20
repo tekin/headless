@@ -75,6 +75,7 @@ class Headless
     end
 
     raise Exception.new("Xvfb did not launch - something's wrong") unless read_pid
+    at_exit { self.destroy }
   end
 
   # Switches to the headless server
